@@ -1,0 +1,156 @@
+---
+- name: Fedora dotfiles bootstrap (local)
+  hosts: local
+  gather_facts: true
+  become: true
+
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+
+    dnf_conf_block: |
+      # Added/managed by Fedora-Dotfiles
+      fastestmirror=True
+      max_parallel_downloads=10
+      defaultyes=True
+      keepcache=True
+
+    base_packages:
+      - git
+      - curl
+      - wget
+      - vim
+      - htop
+      - btop
+      - fastfetch
+      - bat
+      - lsd
+      - ranger
+      - neovim
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+      - fcitx5
+      - fcitx5-configtool
+
+    hyprland_packages:
+      - hyprland
+      - waybar
+      - rofi
+      - dunst
+      - mako
+      - grim
+      - slurp
+      - swappy
+      - swaybg
+      - swaylock
+      - wf-recorder
+      - pavucontrol
+      - network-manager-applet
+      - blueman
+      - xdg-desktop-portal
+      - xdg-desktop-portal-hyprland
+
+    flatpaks:
+      - org.wezfurlong.wezterm
+      - md.obsidian.Obsidian
+      - org.telegram.desktop
+      - com.spotify.Client
+
+  tasks:
+    - name: Ensure dnf.conf contains performance defaults
+      ansible.builtin.blockinfile:
+        path: /etc/dnf/dnf.conf
+        create: true
+        marker: "# {mark} Fedora-Dotfiles"
+        block: "{{ dnf_conf_block }}"
+
+    - name: Enable RPM Fusion repositories
+      ansible.builtin.dnf:
+        name:
+          - "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
+          - "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
+        state: present
+
+    - name: Update packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+    - name: Install base packages
+      ansible.builtin.dnf:
+        name: "{{ base_packages }}"
+        state: present
+        skip_broken: true
+
+    - name: Install Hyprland + desktop packages
+      ansible.builtin.dnf:
+        name: "{{ hyprland_packages }}"
+        state: present
+        skip_broken: true
+
+    - name: Ensure flathub remote exists
+      become: false
+      ansible.builtin.command: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      changed_when: false
+
+    - name: Install flatpaks
+      become: false
+      ansible.builtin.command: flatpak install -y flathub {{ item }}
+      loop: "{{ flatpaks }}"
+      register: flatpak_install
+      changed_when: "'Installing:' in (flatpak_install.stdout | default(''))"
+      failed_when: false
+
+    - name: Ensure user config directories exist
+      become: false
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - .config
+        - .android
+        - .local/share/fonts
+
+    - name: Copy dotfiles (.config)
+      become: false
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/.config/"
+        dest: "{{ ansible_env.HOME }}/.config/"
+        mode: preserve
+        backup: true
+
+    - name: Copy .zshrc
+      become: false
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/.zshrc"
+        dest: "{{ ansible_env.HOME }}/.zshrc"
+        mode: "0644"
+        backup: true
+
+    - name: Copy Android Studio settings stub (.android)
+      become: false
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/.android/"
+        dest: "{{ ansible_env.HOME }}/.android/"
+        mode: preserve
+        backup: true
+
+    - name: Install fonts into user font dir
+      become: false
+      ansible.builtin.copy:
+        src: "{{ repo_root }}/fonts/"
+        dest: "{{ ansible_env.HOME }}/.local/share/fonts/"
+        mode: preserve
+
+    - name: Rebuild font cache
+      become: false
+      ansible.builtin.command: fc-cache -f
+      changed_when: false
+
+    - name: Set default shell to zsh for current user (if available)
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        shell: /usr/bin/zsh
+
+

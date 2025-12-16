@@ -1,3 +1,19 @@
+#!/usr/bin/env bash
+
+# NOTE: This file is kept for historical reference.
+# For a maintained, idempotent setup run:
+#   ./autoinstall.sh
+#
+# If you *really* want to run the old imperative script, run:
+#   ./startup_installation.sh --legacy
+
+if [[ "${1:-}" != "--legacy" ]]; then
+  echo "startup_installation.sh is legacy. Running ./autoinstall.sh instead."
+  exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/autoinstall.sh"
+fi
+shift || true
+
+# -------------------- LEGACY BELOW --------------------
 # dnf config
 sudo echo "
 
