@@ -70,6 +70,19 @@
           - "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
           - "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
         state: present
+        # First-time setup often fails with "OpenPGP keys not configured" before the
+        # rpmfusion release RPM drops its key files into /etc/pki/rpm-gpg.
+        # We verify packages from repos after importing keys below.
+        disable_gpg_check: true
+
+    - name: Import RPM Fusion GPG keys (free/nonfree)
+      ansible.builtin.rpm_key:
+        key: "{{ item }}"
+        state: present
+      loop:
+        - "/etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-free-fedora-{{ ansible_facts.distribution_major_version }}"
+        - "/etc/pki/rpm-gpg/RPM-GPG-KEY-rpmfusion-nonfree-fedora-{{ ansible_facts.distribution_major_version }}"
+      failed_when: false
 
     - name: Update packages
       ansible.builtin.dnf:
