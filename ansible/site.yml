@@ -6,6 +6,7 @@
 
   vars:
     repo_root: "{{ playbook_dir }}/.."
+    hyprland_copr: "solopasha/hyprland"
 
     dnf_conf_block: |
       # Added/managed by Fedora-Dotfiles
@@ -26,6 +27,7 @@
       - lsd
       - ranger
       - neovim
+      - flatpak
       - zsh
       - zsh-autosuggestions
       - zsh-syntax-highlighting
@@ -89,15 +91,50 @@
         name: "*"
         state: latest
 
-    - name: Install base packages
+    - name: Ensure COPR tooling is installed
       ansible.builtin.dnf:
-        name: "{{ base_packages }}"
+        name:
+          - dnf-plugins-core
         state: present
-        skip_broken: true
 
-    - name: Install Hyprland + desktop packages
+    - name: Check whether Hyprland is available in enabled repos
+      ansible.builtin.command: dnf -q info hyprland
+      register: hyprland_info
+      changed_when: false
+      failed_when: false
+
+    - name: Enable Hyprland COPR when Hyprland isn't available
+      ansible.builtin.command: dnf -y copr enable {{ hyprland_copr }}
+      when: hyprland_info.rc != 0
+      changed_when: true
+
+    - name: Refresh package metadata after enabling COPR
       ansible.builtin.dnf:
-        name: "{{ hyprland_packages }}"
+        update_cache: true
+      when: hyprland_info.rc != 0
+
+    - name: Preflight - check which requested packages exist
+      ansible.builtin.command: dnf -q info {{ item }}
+      register: pkg_availability
+      changed_when: false
+      failed_when: false
+      loop: "{{ (base_packages + hyprland_packages) | unique }}"
+
+    - name: Build installable and missing package lists
+      ansible.builtin.set_fact:
+        installable_packages: "{{ pkg_availability.results | selectattr('rc', 'eq', 0) | map(attribute='item') | list }}"
+        missing_packages: "{{ pkg_availability.results | rejectattr('rc', 'eq', 0) | map(attribute='item') | list }}"
+
+    - name: Show missing packages (if any)
+      ansible.builtin.debug:
+        msg:
+          - "Some requested packages are not available in current repos and will be skipped:"
+          - "{{ missing_packages }}"
+      when: missing_packages | length > 0
+
+    - name: Install all available packages
+      ansible.builtin.dnf:
+        name: "{{ installable_packages }}"
         state: present
         skip_broken: true
 
