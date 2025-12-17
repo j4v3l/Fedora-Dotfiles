@@ -272,10 +272,6 @@ export PATH=$PATH:$HOME/go/bin
 export PATH=$PATH:$HOME/.nimble/bin
 export DOTNET_ROOT="/usr/share/dotnet"
 export PATH="$PATH:/usr/share/dotnet"
-export PATH="$PATH:/home/youngermaster/Flutter/flutter/bin"
-export PATH="$PATH:/home/youngermaster/AndroidStudio/android-studio/bin"
-export PATH="$PATH:/home/youngermaster/JetBrains/Rider/bin/"
-export PATH="$PATH:/home/youngermaster/AppImages"
 ## Flutter
 export CHROME_EXECUTABLE=/usr/bin/google-chrome-stable
 ## Node Version Manager
@@ -283,23 +279,38 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# Android SDK Tools
-export PATH="$PATH:/home/youngermaster/Android/Sdk/build-tools/32.0.0/"
-export PATH="$PATH:/home/youngermaster/Android/Sdk/cmdline-tools/latest/bin/"
-export ANDROID_SDK_ROOT=/home/youngermaster/Android/Sdk
-export PATH=$PATH:$ANDROID_SDK_ROOT/emulator
-export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
-
 # Pomodoro Program PATH
 export PATH="$PATH:/usr/share/pomodoro_cli/"
 
-# Git config
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/aur
-ssh-add ~/.ssh/id_ed25519_young_bitbucket
-ssh-add ~/.ssh/id_ed25519_youngermaster_github
-ssh-add ~/.ssh/id_ed25519_youngermaster_gitlab
-ssh-add ~/.ssh/id_rsa_jmyoung_getaclub
+# User-specific dev paths (use $HOME instead of a hardcoded username)
+export PATH="$PATH:$HOME/Flutter/flutter/bin"
+export PATH="$PATH:$HOME/AndroidStudio/android-studio/bin"
+export PATH="$PATH:$HOME/JetBrains/Rider/bin/"
+export PATH="$PATH:$HOME/AppImages"
+
+# Android SDK Tools
+export PATH="$PATH:$HOME/Android/Sdk/build-tools/32.0.0/"
+export PATH="$PATH:$HOME/Android/Sdk/cmdline-tools/latest/bin/"
+export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
+export PATH="$PATH:$ANDROID_SDK_ROOT/emulator"
+export PATH="$PATH:$ANDROID_SDK_ROOT/platform-tools"
+
+# Git/SSH agent (only add keys that exist; support per-user key names)
+if [[ -z "${SSH_AUTH_SOCK:-}" ]]; then
+  eval "$(ssh-agent -s)" >/dev/null 2>&1 || true
+fi
+
+for key in \
+  "$HOME/.ssh/aur" \
+  "$HOME/.ssh/id_ed25519_young_bitbucket" \
+  "$HOME/.ssh/id_ed25519_${USER}_github" \
+  "$HOME/.ssh/id_ed25519_${USER}_gitlab" \
+  "$HOME/.ssh/id_ed25519_youngermaster_github" \
+  "$HOME/.ssh/id_ed25519_youngermaster_gitlab" \
+  "$HOME/.ssh/id_rsa_jmyoung_getaclub"
+do
+  [[ -f "$key" ]] && ssh-add "$key" >/dev/null 2>&1 || true
+done
 clear
 
 # To avoid errors gray screens with IDEA IDEs or Android Studio

@@ -143,7 +143,9 @@
         "on-click": "bash ~/.config/waybar/scripts/power-menu/powermenu.sh &"
     },
     "custom/launcher": {
-        "format": "  Youngermaster",
+        "exec": "bash ~/.config/waybar/scripts/launcher.sh",
+        "interval": 3600,
+        "format": "{}",
         "on-click": "rofi -show drun &"
     }
 }

@@ -63,9 +63,9 @@ pip3 install matplotlib numpy matplotlib jupyterlab
 ## Rust programming language
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ## Creates the folders to work on
-mkdir -p ~/GitHub/Youngermaster/
+mkdir -p ~/GitHub/$USER/
 mkdir ~/GitHub/AnotherOnes/
-mkdir -p ~/GitLab/Youngermaster/
+mkdir -p ~/GitLab/$USER/
 mkdir ~/GitLab/AnotherOnes/
 mkdir ~/ISOs ~/AndroidStudio ~/Flutter
 
