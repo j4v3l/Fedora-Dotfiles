@@ -140,12 +140,12 @@
 
     - name: Ensure flathub remote exists
       become: false
-      ansible.builtin.command: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      ansible.builtin.command: flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
       changed_when: false
 
     - name: Install flatpaks
       become: false
-      ansible.builtin.command: flatpak install -y flathub {{ item }}
+      ansible.builtin.command: flatpak install --user -y flathub {{ item }}
       loop: "{{ flatpaks }}"
       register: flatpak_install
       changed_when: "'Installing:' in (flatpak_install.stdout | default(''))"

@@ -21,6 +21,19 @@ if [[ "${ID:-}" != "fedora" ]]; then
   exit 1
 fi
 
+# Sudo is required for system package install + /etc changes.
+if ! command -v sudo >/dev/null 2>&1; then
+  echo "sudo is required but not installed."
+  exit 1
+fi
+
+# Prompt once up-front (avoids mid-run failures). If the user has passwordless sudo,
+# this is a no-op. If the user isn't in sudoers/wheel, this will fail with a clear error.
+if ! sudo -n true >/dev/null 2>&1; then
+  echo "Sudo access is required. You'll be prompted for your password."
+  sudo -v
+fi
+
 if command -v dnf >/dev/null 2>&1; then
   sudo dnf -y install ansible-core git || true
 elif command -v dnf5 >/dev/null 2>&1; then

@@ -9,6 +9,9 @@ This is where I'll be placing my Fedora configuration files.
 
 # Install (revived)
 
+- **Prereq**: your user must have sudo rights (typically be in Fedora's `wheel` group).
+  - If you see sudo permission errors, run: `su -c 'usermod -aG wheel YOUR_USER'` and re-login.
+
 - **Recommended**: run the maintained installer (Fedora only):
   - `./autoinstall.sh`
 - **Legacy**: the old imperative script still exists, but is no longer the default:
