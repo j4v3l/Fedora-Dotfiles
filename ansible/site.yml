@@ -2,7 +2,7 @@
 - name: Fedora dotfiles bootstrap (local)
   hosts: local
   gather_facts: true
-  become: true
+  become: false
 
   vars:
     repo_root: "{{ playbook_dir }}/.."
@@ -60,6 +60,7 @@
 
   tasks:
     - name: Ensure dnf.conf contains performance defaults
+      become: true
       ansible.builtin.blockinfile:
         path: /etc/dnf/dnf.conf
         create: true
@@ -67,6 +68,7 @@
         block: "{{ dnf_conf_block }}"
 
     - name: Enable RPM Fusion repositories
+      become: true
       ansible.builtin.dnf:
         name:
           - "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-{{ ansible_facts.distribution_major_version }}.noarch.rpm"
@@ -78,6 +80,7 @@
         disable_gpg_check: true
 
     - name: Import RPM Fusion GPG keys (free/nonfree)
+      become: true
       ansible.builtin.rpm_key:
         key: "{{ item }}"
         state: present
@@ -87,33 +90,39 @@
       failed_when: false
 
     - name: Update packages
+      become: true
       ansible.builtin.dnf:
         name: "*"
         state: latest
 
     - name: Ensure COPR tooling is installed
+      become: true
       ansible.builtin.dnf:
         name:
           - dnf-plugins-core
         state: present
 
     - name: Check whether Hyprland is available in enabled repos
+      become: true
       ansible.builtin.command: dnf -q info hyprland
       register: hyprland_info
       changed_when: false
       failed_when: false
 
     - name: Enable Hyprland COPR when Hyprland isn't available
+      become: true
       ansible.builtin.command: dnf -y copr enable {{ hyprland_copr }}
       when: hyprland_info.rc != 0
       changed_when: true
 
     - name: Refresh package metadata after enabling COPR
+      become: true
       ansible.builtin.dnf:
         update_cache: true
       when: hyprland_info.rc != 0
 
     - name: Preflight - check which requested packages exist
+      become: true
       ansible.builtin.command: dnf -q info {{ item }}
       register: pkg_availability
       changed_when: false
@@ -133,6 +142,7 @@
       when: missing_packages | length > 0
 
     - name: Install all available packages
+      become: true
       ansible.builtin.dnf:
         name: "{{ installable_packages }}"
         state: present
@@ -199,6 +209,7 @@
       changed_when: false
 
     - name: Set default shell to zsh for current user (if available)
+      become: true
       ansible.builtin.user:
         name: "{{ ansible_user_id }}"
         shell: /usr/bin/zsh
